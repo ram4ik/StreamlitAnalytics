@@ -359,6 +359,9 @@
     </div>
 
     <script>
+        // Load data from pre-fetched JSON (updated by GitHub Actions)
+        const USE_PREFETCHED_DATA = true; // Set to false to use live API calls
+
         // Repository URLs from WEBPAGES.md
         const repoUrls = [
             'https://github.com/ram4ik/DocksidePage',
@@ -494,15 +497,114 @@
             }
         }
 
+        async function loadPrefetchedData() {
+            try {
+                setStatus('loading', 'Loading cached data...');
+
+                const response = await fetch('data/stats.json');
+                if (!response.ok) {
+                    throw new Error('Could not load cached data. GitHub Actions may not have run yet.');
+                }
+
+                const data = await response.json();
+
+                // Display the data
+                displayPrefetchedData(data);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                const lastUpdated = new Date(data.last_updated);
+                document.getElementById('lastUpdated').textContent = lastUpdated.toLocaleString();
+
+                setStatus('success', `✅ Loaded ${data.total_stats.total_apps} apps (auto-updated every 6h)`);
+                document.getElementById('rateLimitText').textContent = '📊 Using cached data';
+
+                return true;
+            } catch (error) {
+                console.error('Error loading prefetched data:', error);
+                return false;
+            }
+        }
+
+        function displayPrefetchedData(data) {
+            const stats = data.total_stats;
+
+            // Update summary stats
+            document.getElementById('totalApps').textContent = stats.total_apps;
+            document.getElementById('totalStars').textContent = stats.total_stars.toLocaleString();
+            document.getElementById('totalForks').textContent = stats.total_forks.toLocaleString();
+            document.getElementById('totalWatchers').textContent = stats.total_watchers.toLocaleString();
+
+            // Display individual apps
+            const appsGrid = document.getElementById('appsGrid');
+            appsGrid.innerHTML = '';
+
+            // Sort apps by stars (most popular first)
+            const appsArray = Object.entries(data.apps)
+                .filter(([name, app]) => app.success)
+                .sort(([, a], [, b]) => (b.info.stars || 0) - (a.info.stars || 0));
+
+            appsArray.forEach(([appName, app]) => {
+                const info = app.info;
+                const views = app.views;
+
+                const card = document.createElement('div');
+                card.className = 'app-card';
+                card.innerHTML = `
+                    <h3>${appName}</h3>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">
+                        ${info.description || 'No description available'}
+                    </p>
+                    <a href="${info.url}" target="_blank" class="github-link" style="color: #667eea; text-decoration: none; font-size: 0.9em;">
+                        🔗 View on GitHub
+                    </a>
+                    <div class="app-stats">
+                        <div class="app-stat">
+                            <span class="label">⭐ Stars</span>
+                            <span class="value">${(info.stars || 0).toLocaleString()}</span>
+                        </div>
+                        <div class="app-stat">
+                            <span class="label">🔱 Forks</span>
+                            <span class="value">${(info.forks || 0).toLocaleString()}</span>
+                        </div>
+                        <div class="app-stat">
+                            <span class="label">👁️ Views</span>
+                            <span class="value">${(views.count || 0).toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; font-size: 0.85em; color: #999;">
+                        ${info.language ? `<span>📝 ${info.language}</span> • ` : ''}
+                        <span>👥 ${(views.uniques || 0)} unique visitors (14d)</span>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.85em; color: #999;">
+                        Updated: ${new Date(info.updated_at).toLocaleDateString()}
+                    </div>
+                `;
+                appsGrid.appendChild(card);
+            });
+        }
+
         async function loadData() {
             const refreshBtn = document.getElementById('refreshBtn');
             refreshBtn.disabled = true;
             refreshBtn.textContent = '⏳ Loading...';
 
-            setStatus('loading', 'Fetching data...');
             document.getElementById('loading').style.display = 'block';
             document.getElementById('content').style.display = 'none';
             document.getElementById('error').style.display = 'none';
+
+            // Try to load prefetched data first
+            if (USE_PREFETCHED_DATA) {
+                const success = await loadPrefetchedData();
+                if (success) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.textContent = '🔄 Refresh Now';
+                    return;
+                }
+                // If prefetched fails, fall through to live API
+                console.log('Prefetched data not available, falling back to live API...');
+            }
 
             // Check rate limit first
             await checkRateLimit();
@@ -556,9 +658,9 @@
                     <div class="error">
                         ⚠️ Error: ${error.message}
                         <br><br>
-                        <strong>Solution:</strong> Add a GitHub token above for reliable, unlimited updates!
+                        <strong>Solution:</strong> Data will be available once GitHub Actions runs (every 6 hours).
                         <br><br>
-                        Loaded ${successCount} of ${repos.length} apps before hitting rate limit.
+                        Or add a GitHub token above for immediate live updates!
                     </div>
                 `;
                 setStatus('error', 'Failed to load all data');

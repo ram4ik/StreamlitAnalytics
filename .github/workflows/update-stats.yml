@@ -1,0 +1,39 @@
+name: Update Analytics Data
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual trigger
+  push:
+    branches: [ main ]
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install PyGithub requests python-dotenv
+
+    - name: Fetch GitHub stats
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        python scripts/fetch_stats.py
+
+    - name: Commit and push if changed
+      run: |
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'actions@github.com'
+        git add data/stats.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Update analytics data [skip ci]" && git push)
