@@ -80,10 +80,10 @@ def load_webpages():
         return []
 
 @st.cache_data(ttl=1800)
-def fetch_repo_traffic(github_client, owner, repo_name):
+def fetch_repo_traffic(_github_client, owner, repo_name):
     """Fetch traffic data for a single repository"""
     try:
-        repo = github_client.get_repo(f"{owner}/{repo_name}")
+        repo = _github_client.get_repo(f"{owner}/{repo_name}")
 
         # Get views
         views = repo.get_views_traffic(per="week")
