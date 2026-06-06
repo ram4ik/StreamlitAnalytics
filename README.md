@@ -1,5 +1,28 @@
 # iOS Apps Analytics Dashboard 📱
 
+A beautiful, auto-updating analytics dashboard for monitoring all your iOS app landing pages on GitHub.
+
+🌐 **Live Demo**: https://ram4ik.github.io/StreamlitAnalytics/
+
+## Two Versions Available
+
+### 🌟 Static Website (GitHub Pages) - **Recommended**
+- ✅ Auto-updates every 6 hours via GitHub Actions
+- ✅ Shows stars, forks, views, and traffic data
+- ✅ No rate limits, works for everyone
+- ✅ Super fast loading
+- ✅ Mobile responsive
+
+### 🐍 Streamlit App (Alternative)
+- ✅ Real-time interactive dashboard
+- ✅ Advanced charts and visualizations
+- ✅ Detailed analytics
+- ✅ Live at: https://ram4ik.streamlit.app/
+
+---
+
+## 🚀 Quick Start (GitHub Pages)
+
 A comprehensive Streamlit dashboard for monitoring and analyzing GitHub traffic across all your iOS app landing pages.
 
 ## Features
