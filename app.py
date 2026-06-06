@@ -140,15 +140,17 @@ def fetch_repo_traffic(_github_client, owner, repo_name):
 
 def create_traffic_dataframe(traffic_data):
     """Convert traffic data to DataFrame"""
-    if not traffic_data:
+    if not traffic_data or not traffic_data.get('views'):
         return pd.DataFrame()
 
     views_data = []
-    for view in traffic_data['views']['views']:
+    views_list = traffic_data['views'].get('views', [])
+
+    for view in views_list:
         views_data.append({
-            'date': view.timestamp,
-            'views': view.count,
-            'unique_visitors': view.uniques
+            'date': view.timestamp if hasattr(view, 'timestamp') else view.get('timestamp'),
+            'views': view.count if hasattr(view, 'count') else view.get('count', 0),
+            'unique_visitors': view.uniques if hasattr(view, 'uniques') else view.get('uniques', 0)
         })
 
     return pd.DataFrame(views_data)
