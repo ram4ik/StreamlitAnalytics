@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS Apps Analytics Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .app-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .app-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .app-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .app-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .app-stat {
+            text-align: center;
+        }
+
+        .app-stat .label {
+            font-size: 0.8em;
+            color: #999;
+            display: block;
+        }
+
+        .app-stat .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            padding: 60px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ff4757;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .settings {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .settings input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .settings button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .settings button:hover {
+            background: #5568d3;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.8;
+        }
+
+        .github-link {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            margin-top: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .github-link:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .stat-card .value {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📱 iOS Apps Analytics Dashboard</h1>
+            <p>Real-time GitHub Statistics for All Apps</p>
+        </header>
+
+        <div class="settings" id="settingsPanel">
+            <h3>⚙️ GitHub Token (Optional - for higher rate limits)</h3>
+            <p style="color: #666; font-size: 0.9em; margin: 10px 0;">
+                Without token: 60 requests/hour | With token: 5,000 requests/hour
+                <br>Get token at: <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a>
+            </p>
+            <input type="password" id="githubToken" placeholder="ghp_your_token_here (optional)">
+            <button onclick="saveToken()">💾 Save Token</button>
+            <button onclick="loadData()" style="background: #2ecc71;">🔄 Refresh Data</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading analytics data...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Apps</h3>
+                    <div class="value" id="totalApps">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Stars</h3>
+                    <div class="value" id="totalStars">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Forks</h3>
+                    <div class="value" id="totalForks">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Watchers</h3>
+                    <div class="value" id="totalWatchers">0</div>
+                </div>
+            </div>
+
+            <div id="appsGrid" class="apps-grid"></div>
+
+            <div class="last-updated">
+                Last updated: <span id="lastUpdated"></span>
+            </div>
+        </div>
+
+        <div id="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Repository URLs from WEBPAGES.md
+        const repoUrls = [
+            'https://github.com/ram4ik/DocksidePage',
+            'https://github.com/ram4ik/WanderWisePage',
+            'https://github.com/ram4ik/SmartExpenceTrackerPage',
+            'https://github.com/ram4ik/MorseDotMessengerPage',
+            'https://github.com/ram4ik/PlanistryPage',
+            'https://github.com/ram4ik/SecureCubePage',
+            'https://github.com/ram4ik/UinakPage',
+            'https://github.com/ram4ik/TaskVibePilotPage',
+            'https://github.com/ram4ik/RealLifeStoriesAIPage',
+            'https://github.com/ram4ik/AegisSecurePage',
+            'https://github.com/ram4ik/MySpeedometerPilotPage',
+            'https://github.com/ram4ik/ScreenshotZenPage',
+            'https://github.com/ram4ik/KaraokeViveProPage',
+            'https://github.com/ram4ik/ESTBuddy2Page',
+            'https://github.com/ram4ik/SmartQRCodeAnalyzerPage',
+            'https://github.com/ram4ik/FityazeoPage',
+            'https://github.com/ram4ik/VibeVoiceJournalPage',
+            'https://github.com/ram4ik/DiElaMathemaPage',
+            'https://github.com/ram4ik/ReceptoVibePage',
+            'https://github.com/ram4ik/SmartNotetakerPage',
+            'https://github.com/ram4ik/SketchPadAIPage',
+            'https://github.com/ram4ik/FeelsAlivePage',
+            'https://github.com/ram4ik/VibeHabitPulsePage'
+        ];
+
+        function saveToken() {
+            const token = document.getElementById('githubToken').value;
+            if (token) {
+                localStorage.setItem('github_token', token);
+                alert('✅ Token saved! Click "Refresh Data" to reload with your token.');
+            }
+        }
+
+        function getToken() {
+            return localStorage.getItem('github_token') || '';
+        }
+
+        function parseRepoUrl(url) {
+            const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+            if (match) {
+                return {
+                    owner: match[1],
+                    repo: match[2],
+                    appName: match[2].replace('Page', '')
+                };
+            }
+            return null;
+        }
+
+        async function fetchRepoData(owner, repo) {
+            const token = getToken();
+            const headers = {
+                'Accept': 'application/vnd.github.v3+json'
+            };
+
+            if (token) {
+                headers['Authorization'] = `token ${token}`;
+            }
+
+            try {
+                const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+                    headers: headers
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching ${owner}/${repo}:`, error);
+                return null;
+            }
+        }
+
+        async function loadData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            const repos = repoUrls.map(parseRepoUrl).filter(r => r !== null);
+            const repoDataPromises = repos.map(r => fetchRepoData(r.owner, r.repo));
+
+            try {
+                const results = await Promise.all(repoDataPromises);
+                const validResults = results.filter(r => r !== null);
+
+                if (validResults.length === 0) {
+                    throw new Error('Could not fetch any repository data. Check your internet connection or try adding a GitHub token.');
+                }
+
+                displayData(repos, validResults);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerHTML = `
+                    <div class="error">
+                        ⚠️ Error: ${error.message}
+                        <br><br>
+                        Try adding a GitHub token in the settings above for better reliability.
+                    </div>
+                `;
+            }
+        }
+
+        function displayData(repos, results) {
+            // Calculate totals
+            let totalStars = 0;
+            let totalForks = 0;
+            let totalWatchers = 0;
+
+            results.forEach(repo => {
+                totalStars += repo.stargazers_count || 0;
+                totalForks += repo.forks_count || 0;
+                totalWatchers += repo.watchers_count || 0;
+            });
+
+            // Update summary stats
+            document.getElementById('totalApps').textContent = results.length;
+            document.getElementById('totalStars').textContent = totalStars.toLocaleString();
+            document.getElementById('totalForks').textContent = totalForks.toLocaleString();
+            document.getElementById('totalWatchers').textContent = totalWatchers.toLocaleString();
+
+            // Display individual apps
+            const appsGrid = document.getElementById('appsGrid');
+            appsGrid.innerHTML = '';
+
+            results.forEach((repo, index) => {
+                const appName = repos[index].appName;
+                const card = document.createElement('div');
+                card.className = 'app-card';
+                card.innerHTML = `
+                    <h3>${appName}</h3>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">
+                        ${repo.description || 'No description available'}
+                    </p>
+                    <a href="${repo.html_url}" target="_blank" class="github-link" style="color: #667eea; text-decoration: none; font-size: 0.9em;">
+                        🔗 View on GitHub
+                    </a>
+                    <div class="app-stats">
+                        <div class="app-stat">
+                            <span class="label">⭐ Stars</span>
+                            <span class="value">${repo.stargazers_count || 0}</span>
+                        </div>
+                        <div class="app-stat">
+                            <span class="label">🔱 Forks</span>
+                            <span class="value">${repo.forks_count || 0}</span>
+                        </div>
+                        <div class="app-stat">
+                            <span class="label">👁️ Watch</span>
+                            <span class="value">${repo.watchers_count || 0}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; font-size: 0.85em; color: #999;">
+                        ${repo.language ? `<span>📝 ${repo.language}</span> • ` : ''}
+                        <span>Updated: ${new Date(repo.updated_at).toLocaleDateString()}</span>
+                    </div>
+                `;
+                appsGrid.appendChild(card);
+            });
+        }
+
+        // Load data on page load
+        window.onload = loadData;
+
+        // Auto-refresh every 5 minutes
+        setInterval(loadData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
