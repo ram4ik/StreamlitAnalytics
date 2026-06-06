@@ -97,6 +97,20 @@ def fetch_repo_traffic(_github_client, owner, repo_name):
         # Get popular content
         paths = repo.get_top_paths()
 
+        # Convert views object to dict with proper structure
+        views_dict = {
+            'count': views['count'],
+            'uniques': views['uniques'],
+            'views': views['views']
+        }
+
+        # Convert clones object to dict
+        clones_dict = {
+            'count': clones['count'],
+            'uniques': clones['uniques'],
+            'clones': clones['clones']
+        }
+
         # Get repo info
         repo_info = {
             'name': repo.name,
@@ -112,10 +126,10 @@ def fetch_repo_traffic(_github_client, owner, repo_name):
         }
 
         return {
-            'views': views,
-            'clones': clones,
-            'referrers': referrers,
-            'paths': paths,
+            'views': views_dict,
+            'clones': clones_dict,
+            'referrers': list(referrers),
+            'paths': list(paths),
             'info': repo_info
         }
     except GithubException as e:
