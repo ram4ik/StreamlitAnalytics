@@ -52,7 +52,9 @@ def get_github_client():
         st.error("⚠️ GitHub token not found. Please set GITHUB_TOKEN in .env file or Streamlit secrets.")
         st.info("Create a token at: https://github.com/settings/tokens")
         st.stop()
-    return Github(token)
+    from github import Auth
+    auth = Auth.Token(token)
+    return Github(auth=auth)
 
 @st.cache_data(ttl=3600)
 def load_webpages():
@@ -97,18 +99,18 @@ def fetch_repo_traffic(_github_client, owner, repo_name):
         # Get popular content
         paths = repo.get_top_paths()
 
-        # Convert views object to dict with proper structure
+        # Convert views object to dict with proper structure (use attributes, not dict access)
         views_dict = {
-            'count': views['count'],
-            'uniques': views['uniques'],
-            'views': views['views']
+            'count': views.count,
+            'uniques': views.uniques,
+            'views': list(views.views) if views.views else []
         }
 
-        # Convert clones object to dict
+        # Convert clones object to dict (use attributes, not dict access)
         clones_dict = {
-            'count': clones['count'],
-            'uniques': clones['uniques'],
-            'clones': clones['clones']
+            'count': clones.count,
+            'uniques': clones.uniques,
+            'clones': list(clones.clones) if clones.clones else []
         }
 
         # Get repo info
